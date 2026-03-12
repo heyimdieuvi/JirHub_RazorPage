@@ -7,9 +7,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JirHub.MVCWebApp.ViNTD", "J
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JirHub.Repository.ViNTD", "JirHub.Repository.ViNTD\JirHub.Repository.ViNTD.csproj", "{90180FDA-9F48-473C-9708-B234FBE6E76D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JirHub.Entities.ViNTD", "JirHub.Entities.ViNTD\JirHub.Entities.ViNTD.csproj", "{15796994-2853-4C5E-810D-18E1DCA00513}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JirHub.Entities.ViNTD", "JirHub.Entities.ViNTD\JirHub.Entities.ViNTD.csproj", "{15796994-2853-4C5E-810D-18E1DCA00513}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JirHub.Services.ViNTD", "JirHub.Services.ViNTD\JirHub.Services.ViNTD.csproj", "{39812A9D-242A-45BC-9C06-98E56A7A5141}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JirHub.Services.ViNTD", "JirHub.Services.ViNTD\JirHub.Services.ViNTD.csproj", "{39812A9D-242A-45BC-9C06-98E56A7A5141}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EA013F86-A7F4-435C-BE6A-37FA328F8AAB}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

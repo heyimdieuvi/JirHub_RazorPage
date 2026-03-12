@@ -9,3 +9,4 @@
 
 # EF Core 
 *.log
+appsettings.json

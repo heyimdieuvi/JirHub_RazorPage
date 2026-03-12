@@ -1,0 +1,220 @@
+@{
+    ViewData["Title"] = "Project Configuration";
+}
+
+<div class="container mt-4">
+    <h2>Project Configuration - Member 2</h2>
+    <p class="text-muted">Configure secure Jira and GitHub integrations with encrypted credentials.</p>
+
+    <div id="alertContainer"></div>
+
+    <form id="configForm">
+        @Html.AntiForgeryToken()
+
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Group Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="groupId" class="form-label">Group ID <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="groupId" name="groupId" required>
+                    <div class="invalid-feedback">Please provide a valid group ID.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Jira Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="jiraUrl" class="form-label">Jira URL <span class="text-danger">*</span></label>
+                    <input type="url" class="form-control" id="jiraUrl" name="jiraUrl" 
+                           placeholder="https://yourcompany.atlassian.net" required>
+                    <div class="form-text">Your Jira instance URL</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="jiraEmail" class="form-label">Jira Email <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="jiraEmail" name="jiraEmail" 
+                           placeholder="you@example.com" required>
+                    <div class="form-text">Email associated with your Jira account</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="jiraApiToken" class="form-label">Jira API Token <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="jiraApiToken" name="jiraApiToken" required>
+                    <div class="form-text">
+                        Generate from: <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank">Atlassian API Tokens</a>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="jiraProjectKey" class="form-label">Jira Project Key <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="jiraProjectKey" name="jiraProjectKey" 
+                           placeholder="PROJ" maxlength="20" required>
+                    <div class="form-text">The unique key for your Jira project</div>
+                </div>
+
+                <button type="button" class="btn btn-outline-info" id="verifyJiraBtn">
+                    <i class="bi bi-check-circle"></i> Test Jira Connection
+                </button>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">GitHub Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="githubToken" class="form-label">GitHub Personal Access Token <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="githubToken" name="githubToken" required>
+                    <div class="form-text">
+                        Generate from: <a href="https://github.com/settings/tokens" target="_blank">GitHub Tokens</a> (requires 'repo' scope)
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="githubRepoUrl" class="form-label">GitHub Repository URL <span class="text-danger">*</span></label>
+                    <input type="url" class="form-control" id="githubRepoUrl" name="githubRepoUrl" 
+                           placeholder="https://github.com/owner/repository" required>
+                    <div class="form-text">Format: https://github.com/owner/repository</div>
+                </div>
+
+                <button type="button" class="btn btn-outline-dark" id="verifyGitHubBtn">
+                    <i class="bi bi-check-circle"></i> Test GitHub Connection
+                </button>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-success btn-lg" id="saveBtn">
+                <i class="bi bi-shield-lock"></i> Save Configuration (Encrypted)
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Get anti-forgery token
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        // Form submission
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                groupId: parseInt(document.getElementById('groupId').value),
+                jiraUrl: document.getElementById('jiraUrl').value,
+                jiraEmail: document.getElementById('jiraEmail').value,
+                jiraApiToken: document.getElementById('jiraApiToken').value,
+                jiraProjectKey: document.getElementById('jiraProjectKey').value,
+                githubToken: document.getElementById('githubToken').value,
+                githubRepoUrl: document.getElementById('githubRepoUrl').value
+            };
+
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Saving...';
+
+            try {
+                const response = await fetch('/ProjectConfig/SaveSettings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                    document.getElementById('configForm').reset();
+                } else {
+                    showAlert('danger', result.message, result.errors);
+                }
+            } catch (error) {
+                showAlert('danger', 'Network error. Please try again.', [error.message]);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-shield-lock"></i> Save Configuration (Encrypted)';
+            }
+        });
+
+        // Test Jira Connection
+        document.getElementById('verifyJiraBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('verifyJiraBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Testing...';
+
+            const data = {
+                jiraUrl: document.getElementById('jiraUrl').value,
+                jiraEmail: document.getElementById('jiraEmail').value,
+                jiraApiToken: document.getElementById('jiraApiToken').value,
+                jiraProjectKey: document.getElementById('jiraProjectKey').value
+            };
+
+            try {
+                const response = await fetch('/ProjectConfig/VerifyJiraConnection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                showAlert(result.success ? 'success' : 'warning', result.message);
+            } catch (error) {
+                showAlert('danger', 'Failed to test connection', [error.message]);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle"></i> Test Jira Connection';
+            }
+        });
+
+        // Test GitHub Connection
+        document.getElementById('verifyGitHubBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('verifyGitHubBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Testing...';
+
+            const data = {
+                githubToken: document.getElementById('githubToken').value
+            };
+
+            try {
+                const response = await fetch('/ProjectConfig/VerifyGitHubConnection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                showAlert(result.success ? 'success' : 'warning', result.message);
+            } catch (error) {
+                showAlert('danger', 'Failed to test connection', [error.message]);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle"></i> Test GitHub Connection';
+            }
+        });
+
+        // Helper function to show alerts
+        function showAlert(type, message, errors = []) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <strong>${message}</strong>
+                    ${errors.length > 0 ? '<ul class="mb-0 mt-2">' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>' : ''}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.getElementById('alertContainer').innerHTML = alertHtml;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+}

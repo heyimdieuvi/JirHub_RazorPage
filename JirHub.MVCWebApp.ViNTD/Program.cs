@@ -1,3 +1,7 @@
+using JirHub.Repository.ViNTD.Repositories;
+using JirHub.Services.ViNTD.IServices;
+using JirHub.Services.ViNTD.Services;
+
 namespace JirHub.MVCWebApp.ViNTD
 {
     public class Program
@@ -8,6 +12,23 @@ namespace JirHub.MVCWebApp.ViNTD
 
             // Add services to the container.
             builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
+            
+            // Add Data Protection for token encryption
+            builder.Services.AddDataProtection();
+            
+            // Add HttpClientFactory for API calls
+            builder.Services.AddHttpClient();
+            
+            // Register Repositories
+            builder.Services.AddScoped<UserRepository>();
+            builder.Services.AddScoped<ProjectConfigRepository>();
+            builder.Services.AddScoped<ProjectReposRepository>();
+            
+            // Register Services
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+            builder.Services.AddScoped<IConnectionService, ConnectionService>();
+            builder.Services.AddScoped<IProjectConfigService, ProjectConfigService>();
 
             var app = builder.Build();
 
