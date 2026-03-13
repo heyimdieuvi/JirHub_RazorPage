@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JirHub.Entities.ViNTD.Models;
 using JirHub.Repository.ViNTD.Repositories;
 using JirHub.Services.ViNTD.IServices;
+using Microsoft.EntityFrameworkCore;
 
 namespace JirHub.Services.ViNTD.Services
 {
@@ -19,27 +20,99 @@ namespace JirHub.Services.ViNTD.Services
         private readonly ProjectReposRepository _reposRepository;
         private readonly IEncryptionService _encryptionService;
         private readonly IConnectionService _connectionService;
+        private readonly JirHub.Entities.ViNTD.Models.PRN222_SE1816_DbContext _dbContext;
 
         public ProjectConfigService(
             ProjectConfigRepository configRepository,
             ProjectReposRepository reposRepository,
             IEncryptionService encryptionService,
-            IConnectionService connectionService)
+            IConnectionService connectionService,
+            JirHub.Entities.ViNTD.Models.PRN222_SE1816_DbContext dbContext)
         {
             _configRepository = configRepository;
             _reposRepository = reposRepository;
             _encryptionService = encryptionService;
             _connectionService = connectionService;
+            _dbContext = dbContext;
         }
 
         /// <summary>
+        /// Saves Jira configuration ONLY.
+        /// </summary>
+        public async Task<(bool Success, string Message, List<string> Errors)> SaveJiraConfigAsync(
+            int groupId,
+            string jiraUrl,
+            string jiraEmail,
+            string jiraApiToken,
+            string jiraProjectKey)
+        {
+            var errors = new List<string>();
+
+            // Verify Jira connectivity
+            var jiraResult = await _connectionService.VerifyJiraAsync(
+                jiraUrl, jiraEmail, jiraApiToken, jiraProjectKey);
+
+            if (!jiraResult.IsSuccess)
+            {
+                errors.Add($"Jira verification failed: {jiraResult.ErrorMessage}");
+                return (false, "Jira connection failed", errors);
+            }
+
+            var encryptedJiraToken = _encryptionService.Protect(jiraApiToken);
+
+            var config = await _configRepository.GetByGroupIdAsync(groupId);
+            if (config == null)
+            {
+                config = new ProjectConfigsViNtd { GroupId = groupId };
+            }
+
+            config.JiraUrl = jiraUrl.TrimEnd('/');
+            config.JiraEmail = jiraEmail;
+            config.JiraApiToken = encryptedJiraToken;
+            config.JiraProjectKey = jiraProjectKey;
+
+            await _configRepository.UpsertAsync(config);
+            return (true, "Jira configuration saved successfully.", errors);
+        }
+
+        /// <summary>
+        /// Saves GitHub Token ONLY.
+        /// </summary>
+        public async Task<(bool Success, string Message, List<string> Errors)> SaveGithubTokenAsync(
+            int groupId,
+            string githubToken)
+
+        {
+            var errors = new List<string>();
+
+            // Simple token verification (check user profile)
+            var result = await _connectionService.VerifyGithubAsync(githubToken);
+            if (!result.IsSuccess)
+            {
+                errors.Add($"GitHub token invalid: {result.ErrorMessage}");
+                return (false, "GitHub token verification failed", errors);
+            }
+
+            var encryptedToken = _encryptionService.Protect(githubToken);
+
+            var config = await _configRepository.GetByGroupIdAsync(groupId);
+            if (config == null)
+            {
+                config = new ProjectConfigsViNtd { GroupId = groupId };
+            }
+            
+            config.GithubToken = encryptedToken;
+            // config.Repositories might need to be re-verified or deactivated if token changes?
+            // For now, assume user knows what they are doing.
+            
+            await _configRepository.UpsertAsync(config);
+            
+            return (true, "GitHub token updated successfully.", errors);
+        }
+
+
+        /// <summary>
         /// Saves project configuration with full validation and encryption.
-        /// Steps:
-        /// 1. Validate GitHub URL and extract owner/repo
-        /// 2. Verify Jira connectivity
-        /// 3. Verify GitHub token
-        /// 4. Encrypt tokens
-        /// 5. Save to database
         /// </summary>
         public async Task<(bool Success, string Message, List<string> Errors)> SaveProjectConfigAsync(
             int groupId,
@@ -48,21 +121,45 @@ namespace JirHub.Services.ViNTD.Services
             string jiraApiToken,
             string jiraProjectKey,
             string githubToken,
-            string githubRepoUrl)
+            List<string> githubRepoUrls)
         {
             var errors = new List<string>();
 
             try
             {
-                // Step 1: Parse GitHub URL
-                var parsedGitHub = ParseGitHubUrl(githubRepoUrl);
-                if (parsedGitHub == null)
+                // Step 1: Parse and Validate GitHub URLs
+                var validRepos = new List<(string Owner, string RepoName, string OriginalUrl)>();
+
+                // Use a HashSet to ensure unique URLs
+                var processedUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var url in githubRepoUrls)
                 {
-                    errors.Add("Invalid GitHub repository URL format. Expected format: https://github.com/owner/repo");
-                    return (false, "Validation failed", errors);
+                    if (string.IsNullOrWhiteSpace(url)) continue;
+                    if (processedUrls.Contains(url)) continue; // Skip duplicates
+
+                    var parsed = ParseGitHubUrl(url);
+                    if (parsed == null)
+                    {
+                        errors.Add($"Invalid GitHub URL: {url}");
+                    }
+                    else
+                    {
+                        validRepos.Add((parsed.Value.Owner, parsed.Value.RepoName, url));
+                        processedUrls.Add(url);
+                    }
                 }
 
-                var (owner, repoName) = parsedGitHub.Value;
+                if (errors.Any())
+                {
+                     return (false, "Validation failed for one or more repositories", errors);
+                }
+
+                if (!validRepos.Any())
+                {
+                    errors.Add("No valid GitHub repository URLs provided.");
+                    return (false, "Validation failed", errors);
+                }
 
                 // Step 2: Verify Jira connectivity
                 var jiraResult = await _connectionService.VerifyJiraAsync(
@@ -73,12 +170,14 @@ namespace JirHub.Services.ViNTD.Services
                     errors.Add($"Jira verification failed: {jiraResult.ErrorMessage}");
                 }
 
-                // Step 3: Verify GitHub token
-                var githubResult = await _connectionService.VerifyGithubAsync(githubToken);
-
-                if (!githubResult.IsSuccess)
+                // Step 3: Verify GitHub token has access to ALL repositories
+                foreach (var repo in validRepos)
                 {
-                    errors.Add($"GitHub verification failed: {githubResult.ErrorMessage}");
+                    var githubResult = await _connectionService.VerifyGithubRepoAsync(githubToken, repo.Owner, repo.RepoName);
+                    if (!githubResult.IsSuccess)
+                    {
+                        errors.Add($"GitHub verification failed for {repo.OriginalUrl}: {githubResult.ErrorMessage}");
+                    }
                 }
 
                 // If any verification failed, return errors
@@ -114,18 +213,20 @@ namespace JirHub.Services.ViNTD.Services
                 // First, deactivate any existing repos
                 await _reposRepository.DeactivateAllForGroupAsync(groupId);
 
-                // Then add the new repository
-                var repo = new ProjectReposViNtd
+                // Then add/update each repository
+                foreach (var repoInfo in validRepos)
                 {
-                    GroupId = groupId,
-                    RepoName = repoName,
-                    RepoUrl = githubRepoUrl.TrimEnd('/'),
-                    IsActive = true
-                };
+                    var repo = new ProjectReposViNtd
+                    {
+                        GroupId = groupId,
+                        RepoName = repoInfo.RepoName,
+                        RepoUrl = repoInfo.OriginalUrl.TrimEnd('/'),
+                        IsActive = true
+                    };
+                    await _reposRepository.UpsertAsync(repo);
+                }
 
-                await _reposRepository.UpsertAsync(repo);
-
-                return (true, "Project configuration saved successfully. All credentials verified and encrypted.", errors);
+                return (true, "Project configuration saved successfully for " + validRepos.Count + " repositories.", errors);
             }
             catch (Exception ex)
             {
@@ -142,6 +243,83 @@ namespace JirHub.Services.ViNTD.Services
         {
             return await _configRepository.GetByGroupIdAsync(groupId);
         }
+
+        /// <summary>
+        /// Deletes project configuration and deactivates/deletes repositories for a group ID.
+        /// </summary>
+        public async Task<bool> DeleteProjectConfigAsync(int groupId)
+        {
+            try
+            {
+                // Deactivate repositories first
+                await _reposRepository.DeactivateAllForGroupAsync(groupId);
+
+                // Get and delete project config
+                var config = await _configRepository.GetByGroupIdAsync(groupId);
+                if (config != null)
+                {
+                    await _configRepository.RemoveAsync(config);
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Gets all groups with their project configuration and active repositories, optionally filtered by search query.
+        /// </summary>
+        public async Task<List<ClassGroup>> GetAllGroupsWithConfigsAsync(string searchQuery = null)
+        {
+            // Note: In a real app we would use a dedicated repository for ClassGroup,
+            // but for this example we inject the DbContext directly to the service.
+
+            var query = _dbContext.ClassGroups
+                .Include(g => g.ProjectConfigsViNtd)
+                .Include(g => g.ProjectReposViNtds.Where(r => r.IsActive == true))
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var lowerQuery = searchQuery.ToLower();
+                query = query.Where(g =>
+                    (g.ProjectCode != null && g.ProjectCode.ToLower().Contains(lowerQuery)) ||
+                    (g.ProjectConfigsViNtd != null && g.ProjectConfigsViNtd.JiraProjectKey != null && g.ProjectConfigsViNtd.JiraProjectKey.ToLower().Contains(lowerQuery)) ||
+                    (g.GroupName != null && g.GroupName.ToLower().Contains(lowerQuery))
+                );
+            }
+
+            return await query.ToListAsync();
+        }
+
+        public async Task<List<Semester>> GetAllSemestersAsync()
+        {
+            return await _dbContext.Semesters.ToListAsync();
+        }
+
+        public async Task<int?> GetGroupIdForLeaderAsync(string userEmail)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            if (user == null) return null;
+
+            var membership = await _dbContext.GroupMembers
+                .FirstOrDefaultAsync(gm => gm.UserId == user.UserId && gm.IsLeader == true);
+            
+            return membership?.GroupId;
+        }
+
+        public async Task<bool> IsUserLeaderAsync(string userEmail, int groupId)
+        {
+             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+             if (user == null) return false;
+
+             return await _dbContext.GroupMembers
+                 .AnyAsync(gm => gm.GroupId == groupId && gm.UserId == user.UserId && gm.IsLeader == true);
+        }
+
 
         /// <summary>
         /// Helper method to parse GitHub repository URLs.

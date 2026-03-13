@@ -1,0 +1,97 @@
+@model IEnumerable<JirHub.Entities.ViNTD.Models.ProjectReposViNtd>
+
+@{
+    ViewData["Title"] = "Manage Repositories";
+    var groupId = ViewData["GroupId"];
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary"><i class="fas fa-code-branch me-2"></i>Manage Repositories</h2>
+            <p class="text-muted">Track specific GitHub repositories for your project.</p>
+        </div>
+        <a asp-action="Index" asp-controller="ProjectConfig" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Add Repo Section -->
+    <div class="card shadow-sm mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Repository</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="AddRepo" method="post" class="row g-3 align-items-end">
+                <input type="hidden" name="groupId" value="@groupId" />
+                <div class="col-md-10">
+                    <label for="repoUrl" class="form-label fw-bold">GitHub Repository URL</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fab fa-github"></i></span>
+                        <input type="url" class="form-control" name="repoUrl" id="repoUrl" placeholder="https://github.com/owner/repository" required pattern="https://github\.com/.+/.+" title="Must be a valid GitHub repository URL" />
+                    </div>
+                    <div class="form-text">Example: https://github.com/microsoft/vscode</div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-plus me-1"></i> Add Repo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Repo List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Tracked Repositories</h5>
+        </div>
+        <div class="card-body p-0">
+            @if (!Model.Any())
+            {
+                <div class="p-5 text-center text-muted">
+                    <i class="fas fa-code-branch fa-3x mb-3 text-secondary"></i>
+                    <p>No repositories are currently being tracked.</p>
+                    <p>Add a repository URL above to get started.</p>
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var repo in Model)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fab fa-github fa-2x me-3 text-dark"></i>
+                                <div>
+                                    <h6 class="mb-0"><a href="@repo.RepoUrl" target="_blank" class="text-decoration-none fw-bold">@repo.RepoUrl</a></h6>
+                                    <small class="text-muted">Added on @DateTime.Now.ToString("MMM dd, yyyy")</small> 
+                                </div>
+                            </div>
+                            <form asp-action="DeleteRepo" method="post" onsubmit="return confirm('Are you sure you want to remove this repository? This action cannot be undone.');">
+                                <input type="hidden" name="repoId" value="@repo.RepoId" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Remove Repository">
+                                    <i class="fas fa-trash-alt me-1"></i> Remove
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

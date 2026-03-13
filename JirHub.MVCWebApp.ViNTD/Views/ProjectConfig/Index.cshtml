@@ -1,220 +1,225 @@
+@using JirHub.MVCWebApp.ViNTD.Models
+@model SaveProjectConfigDto
+
 @{
-    ViewData["Title"] = "Project Configuration";
+    ViewData["Title"] = "Configuration Details";
 }
 
-<div class="container mt-4">
-    <h2>Project Configuration - Member 2</h2>
-    <p class="text-muted">Configure secure Jira and GitHub integrations with encrypted credentials.</p>
-
-    <div id="alertContainer"></div>
-
-    <form id="configForm">
-        @Html.AntiForgeryToken()
-
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Group Information</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="groupId" class="form-label">Group ID <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" id="groupId" name="groupId" required>
-                    <div class="invalid-feedback">Please provide a valid group ID.</div>
-                </div>
-            </div>
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-8">
+            <h2 class="text-primary"><i class="fas fa-cogs me-2"></i>Project Configuration</h2>
+            <p class="text-muted">Current integration settings for your group.</p>
         </div>
+        <div class="col-4 text-end align-self-center">
+             <!-- Placeholder for top-level actions if needed in future -->
+        </div>
+    </div>
 
-        <div class="card mb-3">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Jira Configuration</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="jiraUrl" class="form-label">Jira URL <span class="text-danger">*</span></label>
-                    <input type="url" class="form-control" id="jiraUrl" name="jiraUrl" 
-                           placeholder="https://yourcompany.atlassian.net" required>
-                    <div class="form-text">Your Jira instance URL</div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Config Cards -->
+    <div class="row g-4">
+        <!-- Jira Section -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fab fa-jira me-2"></i>Jira Integration</h5>
+                    <a asp-action="EditJira" class="btn btn-sm btn-light text-primary fw-bold">
+                        <i class="fas fa-pen me-1"></i> Edit
+                    </a>
                 </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Jira URL</dt>
+                        <dd class="col-sm-8 text-break">
+                            @if (!string.IsNullOrEmpty(Model.JiraUrl))
+                            {
+                                <a href="@Model.JiraUrl" target="_blank" class="text-decoration-none">@Model.JiraUrl <i class="fas fa-external-link-alt small ms-1"></i></a>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Not configured</span>
+                            }
+                        </dd>
 
-                <div class="mb-3">
-                    <label for="jiraEmail" class="form-label">Jira Email <span class="text-danger">*</span></label>
-                    <input type="email" class="form-control" id="jiraEmail" name="jiraEmail" 
-                           placeholder="you@example.com" required>
-                    <div class="form-text">Email associated with your Jira account</div>
-                </div>
+                        <dt class="col-sm-4 text-muted">Account Email</dt>
+                        <dd class="col-sm-8">@(Model.JiraEmail ?? "Not configured")</dd>
 
-                <div class="mb-3">
-                    <label for="jiraApiToken" class="form-label">Jira API Token <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" id="jiraApiToken" name="jiraApiToken" required>
-                    <div class="form-text">
-                        Generate from: <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank">Atlassian API Tokens</a>
+                        <dt class="col-sm-4 text-muted">Project Key</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.JiraProjectKey))
+                            {
+                                <span class="badge bg-info text-dark">@Model.JiraProjectKey</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Not configured</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">API Token</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.JiraApiToken))
+                            {
+                                <span class="text-muted fst-italic">••••••••••••••••</span>
+                                <small class="d-block text-success"><i class="fas fa-shield-alt me-1"></i>Encrypted</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Not configured</span>
+                            }
+                        </dd>
+                    </dl>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-info btn-sm w-100" id="checkJiraHealthBtn">
+                            <i class="fas fa-stethoscope me-1"></i> Check Health
+                        </button>
                     </div>
                 </div>
-
-                <div class="mb-3">
-                    <label for="jiraProjectKey" class="form-label">Jira Project Key <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="jiraProjectKey" name="jiraProjectKey" 
-                           placeholder="PROJ" maxlength="20" required>
-                    <div class="form-text">The unique key for your Jira project</div>
-                </div>
-
-                <button type="button" class="btn btn-outline-info" id="verifyJiraBtn">
-                    <i class="bi bi-check-circle"></i> Test Jira Connection
-                </button>
             </div>
         </div>
 
-        <div class="card mb-3">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">GitHub Configuration</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="githubToken" class="form-label">GitHub Personal Access Token <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" id="githubToken" name="githubToken" required>
-                    <div class="form-text">
-                        Generate from: <a href="https://github.com/settings/tokens" target="_blank">GitHub Tokens</a> (requires 'repo' scope)
+        <!-- GitHub Section -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fab fa-github me-2"></i>GitHub Integration</h5>
+                    <a asp-action="EditGithubToken" class="btn btn-sm btn-light text-dark fw-bold">
+                        <i class="fas fa-pen me-1"></i> Edit Token
+                    </a>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-3">
+                        <dt class="col-sm-4 text-muted">Access Token</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.GithubToken))
+                            {
+                                <span class="text-muted fst-italic">••••••••••••••••</span>
+                                <small class="d-block text-success"><i class="fas fa-shield-alt me-1"></i>Encrypted</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Not configured</span>
+                            }
+                        </dd>
+                    </dl>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-info btn-sm w-100" id="checkGithubHealthBtn">
+                            <i class="fas fa-stethoscope me-1"></i> Check Health (Token)
+                        </button>
                     </div>
-                </div>
 
-                <div class="mb-3">
-                    <label for="githubRepoUrl" class="form-label">GitHub Repository URL <span class="text-danger">*</span></label>
-                    <input type="url" class="form-control" id="githubRepoUrl" name="githubRepoUrl" 
-                           placeholder="https://github.com/owner/repository" required>
-                    <div class="form-text">Format: https://github.com/owner/repository</div>
-                </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 mt-4">
+                        <h6 class="mb-0">Connected Repositories</h6>
+                        <a asp-controller="ProjectRepo" asp-action="ManageRepos" class="btn btn-sm btn-outline-dark">
+                            <i class="fas fa-cog me-1"></i> Manage
+                        </a>
+                    </div>
 
-                <button type="button" class="btn btn-outline-dark" id="verifyGitHubBtn">
-                    <i class="bi bi-check-circle"></i> Test GitHub Connection
-                </button>
+                    @if (Model.GithubRepoUrls != null && Model.GithubRepoUrls.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var repo in Model.GithubRepoUrls)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 border-0 py-1">
+                                    <div class="text-truncate me-2 w-100">
+                                        <i class="fas fa-code-branch text-muted me-2"></i>
+                                        <a href="@repo" target="_blank" class="text-dark text-decoration-none">@repo</a>
+                                    </div>
+                                    <span class="badge bg-success rounded-pill" style="font-size: 0.6em">Active</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                         <div class="text-center text-muted py-3">
+                             <i class="fab fa-github fa-2x mb-2 opacity-50"></i>
+                             <p class="mb-0 small">No repositories connected.</p>
+                         </div>
+                    }
+                </div>
             </div>
         </div>
-
-        <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-success btn-lg" id="saveBtn">
-                <i class="bi bi-shield-lock"></i> Save Configuration (Encrypted)
+    </div>
+    
+    <div class="mt-5 pt-3 border-top text-end">
+         <form asp-action="DeleteSettings" method="post" onsubmit="return confirm('WARNING: This will remove all integration settings and repository links. This action cannot be undone. Are you sure?');">
+            <input type="hidden" name="groupId" value="@Model.GroupId" />
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="fas fa-trash-alt me-1"></i> Delete All Configuration
             </button>
+        </form>
+    </div>
+</div>
+
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="healthToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="healthToastBody">
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
-    </form>
+    </div>
 </div>
 
 @section Scripts {
     <script>
-        // Get anti-forgery token
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        document.addEventListener('DOMContentLoaded', () => {
+            const toastEl = document.getElementById('healthToast');
+            const toastBody = document.getElementById('healthToastBody');
+            const toast = new bootstrap.Toast(toastEl);
 
-        // Form submission
-        document.getElementById('configForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const formData = {
-                groupId: parseInt(document.getElementById('groupId').value),
-                jiraUrl: document.getElementById('jiraUrl').value,
-                jiraEmail: document.getElementById('jiraEmail').value,
-                jiraApiToken: document.getElementById('jiraApiToken').value,
-                jiraProjectKey: document.getElementById('jiraProjectKey').value,
-                githubToken: document.getElementById('githubToken').value,
-                githubRepoUrl: document.getElementById('githubRepoUrl').value
+            const showToast = (type, message) => {
+                toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning');
+                toastEl.classList.add(type === 'success' ? 'bg-success' : (type === 'danger' ? 'bg-danger' : 'bg-warning'));
+                toastBody.textContent = message;
+                toast.show();
             };
 
-            const saveBtn = document.getElementById('saveBtn');
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Saving...';
+            const handleHealthCheck = async (btnId, url, defaultText) => {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
 
-            try {
-                const response = await fetch('/ProjectConfig/SaveSettings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify(formData)
+                btn.addEventListener('click', async () => {
+                    const originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking...';
+
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        // Check if the response is actually valid JSON
+                        const contentType = response.headers.get("content-type");
+                        if (!contentType || !contentType.includes("application/json")) {
+                            throw new Error("Server returned non-JSON response. You might be logged out.");
+                        }
+
+                        const result = await response.json();
+                        showToast(result.success ? 'success' : 'danger', result.message);
+                    } catch (error) {
+                        showToast('danger', 'Error connecting to server. ' + error.message);
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    }
                 });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert('success', result.message);
-                    document.getElementById('configForm').reset();
-                } else {
-                    showAlert('danger', result.message, result.errors);
-                }
-            } catch (error) {
-                showAlert('danger', 'Network error. Please try again.', [error.message]);
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="bi bi-shield-lock"></i> Save Configuration (Encrypted)';
-            }
-        });
-
-        // Test Jira Connection
-        document.getElementById('verifyJiraBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('verifyJiraBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Testing...';
-
-            const data = {
-                jiraUrl: document.getElementById('jiraUrl').value,
-                jiraEmail: document.getElementById('jiraEmail').value,
-                jiraApiToken: document.getElementById('jiraApiToken').value,
-                jiraProjectKey: document.getElementById('jiraProjectKey').value
             };
 
-            try {
-                const response = await fetch('/ProjectConfig/VerifyJiraConnection', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-                showAlert(result.success ? 'success' : 'warning', result.message);
-            } catch (error) {
-                showAlert('danger', 'Failed to test connection', [error.message]);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-check-circle"></i> Test Jira Connection';
-            }
+            handleHealthCheck('checkJiraHealthBtn', '@Url.Action("CheckStoredJiraHealth", "ProjectConfig")', '<i class="fas fa-stethoscope me-1"></i> Check Health');
+            handleHealthCheck('checkGithubHealthBtn', '@Url.Action("CheckStoredGithubHealth", "ProjectConfig")', '<i class="fas fa-stethoscope me-1"></i> Check Health (Token)');
         });
-
-        // Test GitHub Connection
-        document.getElementById('verifyGitHubBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('verifyGitHubBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Testing...';
-
-            const data = {
-                githubToken: document.getElementById('githubToken').value
-            };
-
-            try {
-                const response = await fetch('/ProjectConfig/VerifyGitHubConnection', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-                showAlert(result.success ? 'success' : 'warning', result.message);
-            } catch (error) {
-                showAlert('danger', 'Failed to test connection', [error.message]);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-check-circle"></i> Test GitHub Connection';
-            }
-        });
-
-        // Helper function to show alerts
-        function showAlert(type, message, errors = []) {
-            const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    <strong>${message}</strong>
-                    ${errors.length > 0 ? '<ul class="mb-0 mt-2">' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>' : ''}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-            document.getElementById('alertContainer').innerHTML = alertHtml;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
     </script>
 }

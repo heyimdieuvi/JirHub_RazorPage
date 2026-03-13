@@ -1,0 +1,76 @@
+@model JirHub.MVCWebApp.ViNTD.Models.SaveProjectConfigDto
+
+@{
+    ViewData["Title"] = "Edit Jira Configuration";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="text-center font-weight-light my-2"><i class="fab fa-jira me-2"></i>Edit Jira Settings</h3>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <form asp-action="SaveJira" method="post">
+                        <input type="hidden" asp-for="GroupId" />
+                        
+                        <div class="mb-3">
+                            <label asp-for="JiraUrl" class="form-label fw-bold">Jira Site URL</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-link"></i></span>
+                                <input asp-for="JiraUrl" class="form-control" placeholder="https://your-domain.atlassian.net" required />
+                            </div>
+                            <span asp-validation-for="JiraUrl" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="JiraEmail" class="form-label fw-bold">Jira Account Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input asp-for="JiraEmail" type="email" class="form-control" placeholder="user@example.com" required />
+                            </div>
+                            <span asp-validation-for="JiraEmail" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="JiraApiToken" class="form-label fw-bold">Jira API Token</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input asp-for="JiraApiToken" type="password" class="form-control" value="@Model.JiraApiToken" required />
+                            </div>
+                            <span asp-validation-for="JiraApiToken" class="text-danger small"></span>
+                            <div class="form-text text-muted">Use an existing token or generate a new one from your Atlassian account settings.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="JiraProjectKey" class="form-label fw-bold">Jira Project Key</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                <input asp-for="JiraProjectKey" class="form-control" placeholder="e.g. PRN222" required />
+                            </div>
+                            <span asp-validation-for="JiraProjectKey" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i>Save Jira Settings</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Dashboard</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

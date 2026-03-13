@@ -10,5 +10,6 @@ namespace JirHub.Services.ViNTD.IServices
     public interface IUserService
     {
         Task<List<User>> GetAllUser();
+        Task<User> GetUserAccountAsync(string username, string password);
     }
 }

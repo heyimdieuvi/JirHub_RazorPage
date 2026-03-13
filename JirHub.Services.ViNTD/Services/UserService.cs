@@ -26,5 +26,15 @@ namespace JirHub.Services.ViNTD.Services
                 return new List<User>();
             }
         }
+        public async Task<User> GetUserAccountAsync(string username, string password)
+        {
+            try
+            {
+                return await _repo.GetUserAccountAsync(username, password);
+            } catch (Exception ex)
+            {
+                return null;
+            }
+        }
     }
 }

@@ -1,6 +1,8 @@
+using JirHub.Entities.ViNTD.Models;
 using JirHub.Repository.ViNTD.Repositories;
 using JirHub.Services.ViNTD.IServices;
 using JirHub.Services.ViNTD.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace JirHub.MVCWebApp.ViNTD
 {
@@ -19,6 +21,9 @@ namespace JirHub.MVCWebApp.ViNTD
             // Add HttpClientFactory for API calls
             builder.Services.AddHttpClient();
             
+            // Register DbContext
+            builder.Services.AddScoped<PRN222_SE1816_DbContext>();
+
             // Register Repositories
             builder.Services.AddScoped<UserRepository>();
             builder.Services.AddScoped<ProjectConfigRepository>();
@@ -29,6 +34,16 @@ namespace JirHub.MVCWebApp.ViNTD
             builder.Services.AddScoped<IEncryptionService, EncryptionService>();
             builder.Services.AddScoped<IConnectionService, ConnectionService>();
             builder.Services.AddScoped<IProjectConfigService, ProjectConfigService>();
+            builder.Services.AddScoped<IProjectRepoService, ProjectRepoService>();
+
+            builder.Services.AddAuthentication()
+            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+            {
+                options.LoginPath = new PathString("/Account/Login");
+                options.AccessDeniedPath = new PathString("/Account/Forbidden");
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+
+            });
 
             var app = builder.Build();
 

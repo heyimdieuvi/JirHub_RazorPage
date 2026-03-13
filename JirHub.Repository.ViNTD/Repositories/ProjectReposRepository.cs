@@ -39,7 +39,7 @@ namespace JirHub.Repository.ViNTD.Repositories
                 existing.RepoName = repo.RepoName;
                 existing.IsActive = repo.IsActive;
 
-                _context.ProjectReposViNtds.Update(existing);
+                // No need to explicitly call Update() as the entity is tracked and modified
             }
             else
             {
@@ -48,6 +48,11 @@ namespace JirHub.Repository.ViNTD.Repositories
             }
 
             await _context.SaveChangesAsync();
+            
+            // Detach to avoid longer-term tracking issues
+            if (existing != null) _context.Entry(existing).State = EntityState.Detached;
+            else _context.Entry(repo).State = EntityState.Detached;
+            
             return existing ?? repo;
         }
 
@@ -62,6 +67,12 @@ namespace JirHub.Repository.ViNTD.Repositories
                 repo.IsActive = false;
             }
             await _context.SaveChangesAsync();
+            
+            // Clear tracking to prevent conflicts with subsequent operations
+            foreach(var repo in repos) 
+            {
+                _context.Entry(repo).State = EntityState.Detached;
+            }
         }
     }
 }

@@ -2,7 +2,53 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center py-5">
+    <div class="mb-4 animate-fade-in">
+        <div class="mb-3">
+            <span class="fa-stack fa-3x">
+              <i class="fas fa-circle fa-stack-2x text-primary opacity-25"></i>
+              <i class="fas fa-project-diagram fa-stack-1x text-primary"></i>
+            </span>
+        </div>
+        <h1 class="display-4 fw-bold text-primary">JirHub.ViNTD</h1>
+        <p class="lead text-muted fst-italic">Sync Jira & GitHub - Streamline Your Workflow</p>
+    </div>
+    
+    <div class="row justify-content-center mt-5">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-body p-5">
+                    <h2 class="h4 mb-4 text-dark fw-bold">PRN222 Capstone Integration System</h2>
+                    <p class="card-text mb-5 text-secondary">
+                        Seamlessly connect your Jira project management sprint boards with GitHub repositories. 
+                        Track commits, manage tasks, and visualize team progress in one central dashboard.
+                    </p>
+                    
+                    <div class="row g-4 justify-content-center">
+                        <div class="col-md-5">
+                            <a class="btn btn-primary w-100 py-3 rounded-pill shadow-sm hover-elevate" asp-controller="ProjectConfig" asp-action="Index">
+                                <i class="fas fa-cogs me-2"></i> Configure Project
+                            </a>
+                        </div>
+                        <div class="col-md-5">
+                            <a class="btn btn-outline-dark w-100 py-3 rounded-pill shadow-sm hover-elevate" asp-controller="Teacher" asp-action="Index">
+                                <i class="fas fa-users me-2"></i> View Leaderboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light p-4 border-TOP-0">
+                     <div class="text-muted small">
+                        <p class="mb-1"><strong>Developed by Student:</strong> Nguyen Thi Dieu Vi (ViNTD)</p>
+                        <p class="mb-0"><strong>ID:</strong> SE181505 <span class="mx-2">|</span> <strong>Class:</strong> SE1816</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    .hover-elevate { transition: transform 0.2s; }
+    .hover-elevate:hover { transform: translateY(-3px); }
+</style>

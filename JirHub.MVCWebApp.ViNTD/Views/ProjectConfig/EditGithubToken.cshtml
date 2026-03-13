@@ -1,0 +1,50 @@
+@model JirHub.MVCWebApp.ViNTD.Models.SaveProjectConfigDto
+
+@{
+    ViewData["Title"] = "Edit GitHub Token";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="text-center font-weight-light my-2"><i class="fab fa-github me-2"></i>Edit GitHub Token</h3>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <p class="text-muted">A valid GitHub Personal Access Token (PAT) is required to fetch repository data. Ensure it has <code>repo</code> and <code>read:user</code> scopes.</p>
+
+                    <form asp-action="SaveGithubToken" method="post">
+                        <input type="hidden" asp-for="GroupId" />
+                        
+                        <div class="mb-4">
+                            <label asp-for="GithubToken" class="form-label fw-bold">GitHub Personal Access Token</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-unlock-alt"></i></span>
+                                <input asp-for="GithubToken" type="password" class="form-control" value="@Model.GithubToken" required />
+                            </div>
+                            <span asp-validation-for="GithubToken" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-dark btn-lg"><i class="fas fa-save me-2"></i>Update Token</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Dashboard</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

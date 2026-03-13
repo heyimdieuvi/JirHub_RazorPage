@@ -140,5 +140,49 @@ namespace JirHub.Services.ViNTD.Services
                 return (false, $"Unexpected error verifying GitHub: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Verifies GitHub token has access to a specific repository.
+        /// </summary>
+        public async Task<(bool IsSuccess, string ErrorMessage)> VerifyGithubRepoAsync(string githubToken, string owner, string repo)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(githubToken) || string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(repo))
+                {
+                    return (false, "GitHub token, owner, and repository name are required.");
+                }
+
+                // Create HTTP client
+                var client = _httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
+                client.BaseAddress = new Uri("https://api.github.com");
+
+                // Set required headers for GitHub API
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", githubToken);
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("JirHub", "1.0"));
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+
+                // Call the /repos/{owner}/{repo} endpoint
+                var response = await client.GetAsync($"/repos/{owner}/{repo}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, null);
+                }
+
+                return response.StatusCode switch
+                {
+                    HttpStatusCode.NotFound => (false, $"Repository '{owner}/{repo}' not found or token lacks access (404)."),
+                    HttpStatusCode.Unauthorized => (false, "GitHub token is invalid or expired."),
+                    HttpStatusCode.Forbidden => (false, "Access to repository forbidden (403). Check permissions."),
+                    _ => (false, $"Failed to access repository. Status: {response.StatusCode}")
+                };
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error verifying GitHub repository: {ex.Message}");
+            }
+        }
     }
 }

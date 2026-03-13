@@ -1,18 +1,22 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - JirHub.MVCWebApp.ViNTD</title>
+    <title>@ViewData["Title"] - JirHub.ViNTD</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/JirHub.MVCWebApp.ViNTD.styles.css" asp-append-version="true" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-info border-bottom box-shadow mb-3 bg-opacity-25">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">JirHub.MVCWebApp.ViNTD</a>
+                <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-project-diagram me-2"></i>JirHub.ViNTD
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -20,10 +24,35 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </li>
+                        @if (!(User.IsInRole("3") && User.FindFirst("IsLeader")?.Value == "true"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Teacher" asp-action="Index">
+                                    <i class="fas fa-users"></i> Group List
+                                </a>
+                            </li>
+                        }
+                        @if (!User.IsInRole("1") && !User.IsInRole("2"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="ProjectConfig" asp-action="Index">
+                                    <i class="fas fa-cogs"></i> Project Config
+                                </a>
+                            </li>
+                        }
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">
+                                <i class="fas fa-shield-alt"></i> Privacy
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Logout">
+                                <i class="fas fa-shield-alt"></i> Logout
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -36,9 +65,9 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - JirHub.MVCWebApp.ViNTD - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="border-top footer text-muted bg-light mt-auto">
+        <div class="container py-3 text-center">
+            &copy; 2026 - <strong>JirHub.ViNTD</strong> - SP26_PRN222_SE1816 - <span class="text-primary">SE181505</span> - <a asp-area="" asp-controller="Home" asp-action="Privacy" class="text-decoration-none">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

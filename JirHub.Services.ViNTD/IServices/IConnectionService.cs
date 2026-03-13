@@ -28,8 +28,11 @@ namespace JirHub.Services.ViNTD.IServices
         /// <summary>
         /// Verifies GitHub token validity by calling the /user endpoint.
         /// </summary>
-        /// <param name="githubToken">The GitHub personal access token.</param>
-        /// <returns>A tuple containing success status and error message if failed.</returns>
         Task<(bool IsSuccess, string ErrorMessage)> VerifyGithubAsync(string githubToken);
+
+        /// <summary>
+        /// Verifies GitHub token has access to a specific repository.
+        /// </summary>
+        Task<(bool IsSuccess, string ErrorMessage)> VerifyGithubRepoAsync(string githubToken, string owner, string repo);
     }
 }

@@ -31,9 +31,9 @@ namespace JirHub.MVCWebApp.ViNTD.Models
         [Required(ErrorMessage = "GitHub token is required.")]
         public string GithubToken { get; set; }
 
-        [Required(ErrorMessage = "GitHub repository URL is required.")]
-        [Url(ErrorMessage = "Please enter a valid GitHub repository URL.")]
-        public string GithubRepoUrl { get; set; }
+        [Required(ErrorMessage = "At least one GitHub repository URL is required.")]
+        [MinLength(1, ErrorMessage = "At least one GitHub repository URL is required.")]
+        public List<string> GithubRepoUrls { get; set; } = new List<string>();
     }
 
     /// <summary>

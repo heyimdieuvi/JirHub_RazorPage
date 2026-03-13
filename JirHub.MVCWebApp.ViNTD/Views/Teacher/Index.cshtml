@@ -1,0 +1,190 @@
+@using JirHub.Entities.ViNTD.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model List<JirHub.Entities.ViNTD.Models.ClassGroup>
+
+@{
+    ViewData["Title"] = "Teacher Oversight";
+    
+    // Safety check for search string
+    var currentSearch = ViewData["CurrentSearch"] as string;
+    
+    // Safety check for semesters list
+    var semesters = ViewData["Semesters"] as List<Semester>;
+    if (semesters == null) semesters = new List<Semester>();
+    
+    // Safety check for selected semester
+    var selectedSemester = ViewData["SelectedSemester"] as string;
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary"><i class="fas fa-chalkboard-teacher me-2"></i>Class Group Oversight</h2>
+        <span class="badge bg-secondary">Teacher View</span>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 text-muted"><i class="fas fa-filter me-2"></i>Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Search</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="searchQuery" class="form-control" placeholder="Group Name, Project Code..." value="@currentSearch">
+                    </div>
+                </div>
+                 <div class="col-md-4">
+                    <label class="form-label fw-bold">Semester</label>
+                    <select name="semesterCode" class="form-select">
+                        <option value="">All Semesters</option>
+                        @foreach (var sem in semesters)
+                        {
+                            <option value="@sem.SemesterCode" selected="@(selectedSemester == sem.SemesterCode ? "selected" : null)">
+                                @sem.SemesterCode
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-sync-alt me-1"></i> Apply Filter</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-times me-1"></i> Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>@TempData["ErrorMessage"]</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Groups Table -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary">
+                            <tr>
+                                <th class="ps-4">Group Name</th>
+                                <th>Project Code</th>
+                                <th>Semester</th>
+                                <th>Jira Integration</th>
+                                <th>GitHub Integration</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var group in Model)
+                            {
+                                var hasConfig = group.ProjectConfigsViNtd != null;
+                                var activeRepos = group.ProjectReposViNtds?.Count(r => r.IsActive == true) ?? 0;
+                                
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">@group.GroupName</div>
+                                        <small class="text-muted">ID: @group.GroupId</small>
+                                    </td>
+                                    <td>
+                                        @if(!string.IsNullOrEmpty(group.ProjectCode))
+                                        {
+                                            <span class="badge bg-light text-dark border">@group.ProjectCode</span>
+                                        }
+                                        else 
+                                        { 
+                                            <span class="text-muted fst-italic">N/A</span> 
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">@group.SemesterCode</span>
+                                    </td>
+                                    <td>
+                                        @if (hasConfig)
+                                        {
+                                            <div class="d-flex align-items-center text-success">
+                                                <i class="fab fa-jira me-2 fa-lg"></i>
+                                                <div>
+                                                    <div class="small fw-bold">Connected</div>
+                                                    <div class="small text-muted" style="font-size: 0.75rem;">Key: @group.ProjectConfigsViNtd?.JiraProjectKey</div>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center text-muted opacity-50">
+                                                <i class="fab fa-jira me-2 fa-lg"></i>
+                                                <span class="small">Not Configured</span>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (activeRepos > 0)
+                                        {
+                                            <div class="d-flex align-items-center text-dark">
+                                                <i class="fab fa-github me-2 fa-lg"></i>
+                                                <span class="badge bg-dark rounded-pill">@activeRepos Active</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center text-muted opacity-50">
+                                                <i class="fab fa-github me-2 fa-lg"></i>
+                                                <span class="small">No Repositories</span>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (hasConfig && activeRepos > 0)
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check me-1"></i> Ready</span>
+                                        }
+                                        else if (hasConfig)
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-exclamation me-1"></i> Partial</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary"><i class="fas fa-minus me-1"></i> Pending</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i> Details
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-muted small">
+                Showing @Model.Count class groups
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-3 text-muted opacity-25">
+                <i class="fas fa-folder-open fa-4x"></i>
+            </div>
+            <h4>No Class Groups Found</h4>
+            <p class="text-muted">Try adjusting your search filters or clearing them to see all groups.</p>
+            <a asp-action="Index" class="btn btn-outline-primary mt-2">Clear Filters</a>
+        </div>
+    }
+</div>

@@ -20,8 +20,16 @@ namespace JirHub.Repository.ViNTD.Repositories
         /// </summary>
         public async Task<ProjectConfigsViNtd> GetByGroupIdAsync(int groupId)
         {
-            return await _context.ProjectConfigsViNtds
-                .FirstOrDefaultAsync(pc => pc.GroupId == groupId);
+            try
+            {
+                var projectConfig = await _context.ProjectConfigsViNtds
+                    .FirstOrDefaultAsync(pc => pc.GroupId == groupId);
+                return projectConfig;
+            } catch (Exception ex)
+            {
+                return null;
+            }
+
         }
 
         /// <summary>
@@ -29,7 +37,11 @@ namespace JirHub.Repository.ViNTD.Repositories
         /// </summary>
         public async Task<ProjectConfigsViNtd> UpsertAsync(ProjectConfigsViNtd config)
         {
-            var existing = await GetByGroupIdAsync(config.GroupId.Value);
+            ProjectConfigsViNtd existing = null;
+            if (config.GroupId.HasValue)
+            {
+                existing = await GetByGroupIdAsync(config.GroupId.Value);
+            }
 
             if (existing != null)
             {
