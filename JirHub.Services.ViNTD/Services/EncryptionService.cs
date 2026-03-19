@@ -19,7 +19,7 @@ namespace JirHub.Services.ViNTD.Services
         public EncryptionService(IDataProtectionProvider dataProtectionProvider)
         {
             // Create a purpose-specific protector for API tokens
-            _protector = dataProtectionProvider.CreateProtector("JirHub.ApiTokenProtection");
+            _protector = dataProtectionProvider.CreateProtector("JirHub.Member2.API_Tokens");
         }
 
         /// <summary>

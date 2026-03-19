@@ -3,6 +3,8 @@ using JirHub.Repository.ViNTD.Repositories;
 using JirHub.Services.ViNTD.IServices;
 using JirHub.Services.ViNTD.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
 
 namespace JirHub.MVCWebApp.ViNTD
 {
@@ -14,10 +16,13 @@ namespace JirHub.MVCWebApp.ViNTD
 
             // Add services to the container.
             builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
-            
+
             // Add Data Protection for token encryption
-            builder.Services.AddDataProtection();
-            
+            var keyDirectory = new DirectoryInfo(@"C:\SharedKeys\JirHub_Security\");
+            builder.Services.AddDataProtection()
+                .SetApplicationName("JirHub_Project_System")
+                .PersistKeysToFileSystem(keyDirectory);
+
             // Add HttpClientFactory for API calls
             builder.Services.AddHttpClient();
             
